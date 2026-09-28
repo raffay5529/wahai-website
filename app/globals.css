@@ -30,8 +30,12 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 
-    /* Soft mint wash behind the floating header, fading to white. */
-    background-color: #ffffff;
+    /*
+      Soft mint wash behind the floating header, fading to half-white.
+      The half-white (#f6f5f1) appears twice: as the base color and as the
+      last stop of the linear gradient. Change both together.
+    */
+    background-color: #f6f5f1;
     background-image:
       radial-gradient(
         1100px 460px at 12% -60px,
@@ -43,7 +47,7 @@
         rgba(190, 227, 194, 0.3),
         transparent 70%
       ),
-      linear-gradient(to bottom, #e9f4e9 0%, #ffffff 760px);
+      linear-gradient(to bottom, #e9f4e9 0%, #f6f5f1 760px);
     background-repeat: no-repeat;
   }
 }
