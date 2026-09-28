@@ -54,12 +54,14 @@ export default function Home() {
 
         <p
           style={{
-            margin: "20px 0 0",
-            maxWidth: "640px",
+            margin: "18px 0 0",
+            maxWidth: "620px",
             textAlign: "center",
-            fontSize: "clamp(0.95rem, 1.4vw, 1.125rem)",
+            fontSize: "clamp(0.85rem, 1.1vw, 0.95rem)",
+            fontWeight: 450,
             lineHeight: 1.6,
             color: "#6b7280",
+            WebkitFontSmoothing: "antialiased",
           }}
         >
           Get real-time answers and talking points during interviews, sales
