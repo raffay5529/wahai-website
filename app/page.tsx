@@ -57,8 +57,8 @@ export default function Home() {
             margin: "18px 0 0",
             maxWidth: "620px",
             textAlign: "center",
-            fontSize: "clamp(0.85rem, 1.1vw, 0.95rem)",
-            fontWeight: 450,
+            fontSize: "clamp(0.90rem, 1.2vw, 1.125rem)",
+            fontWeight: 400,
             lineHeight: 1.6,
             color: "#6b7280",
             WebkitFontSmoothing: "antialiased",
@@ -80,6 +80,7 @@ export default function Home() {
         >
           <button
             type="button"
+            className="try-btn"
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -87,16 +88,15 @@ export default function Home() {
               padding: "14px 28px",
               borderRadius: "12px",
               border: "none",
-              background: "#151515",
               color: "#ffffff",
               fontSize: "1rem",
               fontWeight: 600,
               cursor: "pointer",
-              boxShadow: "0 4px 14px rgba(0,0,0,0.18)",
             }}
           >
             Try for Free
             <svg
+              className="try-arrow"
               width="18"
               height="18"
               viewBox="0 0 24 24"
@@ -153,6 +153,107 @@ export default function Home() {
           .hero-title .hero-gradient .text-content {
             animation: none !important;
             background-position: 0% 50% !important;
+          }
+        }
+
+        /* Try for Free: animated gradient + smooth hover */
+        @property --try-angle {
+          syntax: "<angle>";
+          inherits: false;
+          initial-value: 0deg;
+        }
+
+        .try-btn {
+          position: relative;
+          overflow: hidden;
+          background: linear-gradient(90deg, #6d28d9, #a855f7, #6d28d9);
+          background-size: 200% 100%;
+          background-position: 0% 50%;
+          box-shadow: 0 4px 14px rgba(109, 40, 217, 0.25);
+          animation: tryGradientMove 4s linear infinite;
+          transition:
+            transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+            box-shadow 0.3s ease,
+            filter 0.3s ease;
+        }
+        .try-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 28px rgba(168, 85, 247, 0.45);
+          filter: brightness(1.08);
+        }
+        .try-btn:active {
+          transform: translateY(0) scale(0.98);
+          box-shadow: 0 4px 14px rgba(109, 40, 217, 0.3);
+        }
+        .try-btn .try-arrow {
+          transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .try-btn:hover .try-arrow {
+          transform: translateX(4px);
+        }
+        @keyframes tryGradientMove {
+          0% { background-position: 0% 50%; }
+          100% { background-position: 200% 50%; }
+        }
+
+        /* Looping animated border (light travels around the button) */
+        .try-btn::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          padding: 2px;
+          background: conic-gradient(
+            from var(--try-angle),
+            transparent 0deg,
+            transparent 230deg,
+            rgba(255, 255, 255, 0.35) 290deg,
+            #ffffff 335deg,
+            transparent 360deg
+          );
+          -webkit-mask:
+            linear-gradient(#000 0 0) content-box,
+            linear-gradient(#000 0 0);
+          -webkit-mask-composite: xor;
+          mask:
+            linear-gradient(#000 0 0) content-box,
+            linear-gradient(#000 0 0);
+          mask-composite: exclude;
+          animation: tryBorderSpin 3s linear infinite;
+          pointer-events: none;
+        }
+        @keyframes tryBorderSpin {
+          to { --try-angle: 360deg; }
+        }
+
+        /* Looping shine sweep */
+        .try-btn::after {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: -75%;
+          width: 50%;
+          height: 100%;
+          background: linear-gradient(
+            120deg,
+            transparent,
+            rgba(255, 255, 255, 0.55),
+            transparent
+          );
+          transform: skewX(-20deg);
+          animation: tryShine 2.8s ease-in-out infinite;
+          pointer-events: none;
+        }
+        @keyframes tryShine {
+          0% { left: -75%; }
+          60%, 100% { left: 135%; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .try-btn,
+          .try-btn::before,
+          .try-btn::after {
+            animation: none;
           }
         }
       `}</style>
