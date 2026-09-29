@@ -1,13 +1,17 @@
 "use client";
 
 import Image from "next/image";
+import Draggable from "react-draggable";
 import {
   Fragment,
+  useCallback,
+  useEffect,
   useRef,
   useState,
   type CSSProperties,
   type FormEvent,
   type ReactNode,
+  type RefObject,
 } from "react";
 
 // Web version of the desktop widget pill: same look, same hover effects and the
@@ -38,6 +42,46 @@ const assistActions = [
   { label: "Follow-up questions", Icon: MessageSquareIcon },
   { label: "Recap", Icon: RefreshIcon },
 ];
+
+// ---- Dragging helpers ----
+// How far (in px) the widget may move from where it sits at rest.
+type Limits = { left: number; right: number; top: number; bottom: number };
+
+// Keeps a value between min and max. If the widget is bigger than the space
+// (min > max) it just sits in the middle.
+const clamp = (value: number, min: number, max: number) =>
+  min > max ? (min + max) / 2 : Math.min(Math.max(value, min), max);
+
+// Works out how far the widget can travel before it would leave the wallpaper.
+// The drag layer fills the wallpaper box, so its on-screen size is the play
+// area. Everything is measured from real on-screen boxes, so the centring and
+// scale classes on the widget need no special handling. While the Assist box
+// is open it counts as part of the widget.
+function measureLimits(
+  layer: HTMLElement | null,
+  widget: HTMLElement | null,
+  panel: HTMLElement | null,
+): Limits | null {
+  if (!layer || !widget) return null;
+
+  const area = layer.getBoundingClientRect();
+  if (!area.width || !area.height) return null;
+
+  const pill = widget.getBoundingClientRect();
+  const box = panel ? panel.getBoundingClientRect() : pill;
+
+  const left = Math.min(pill.left, box.left);
+  const right = Math.max(pill.right, box.right);
+  const top = Math.min(pill.top, box.top);
+  const bottom = Math.max(pill.bottom, box.bottom);
+
+  return {
+    left: area.left - left,
+    right: area.width - (right - area.left),
+    top: area.top - top,
+    bottom: area.height - (bottom - area.top),
+  };
+}
 
 export default function Widget({
   iconSrc = "/wahlogo.png",
@@ -78,214 +122,325 @@ export default function Widget({
     inputRef.current?.focus({ preventScroll: true });
   };
 
+  // ---- Dragging ----
+  // The widget sits inside a full-size, click-through layer, and react-draggable
+  // moves that layer. That keeps the `className` you pass in (centring, top-*,
+  // scale-*) working exactly as before, and the pill follows the cursor 1:1
+  // even when it is scaled down on small screens.
+  const dragRef = useRef<HTMLDivElement>(null); // the layer that moves
+  const widgetRef = useRef<HTMLDivElement>(null); // the pill
+  const panelRef = useRef<HTMLDivElement>(null); // the Assist box, while open
+  const isDragging = useRef(false);
+
+  // How far the layer has moved from its resting place, in px.
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  // How far it may move. Measured again every time a drag starts.
+  const [limits, setLimits] = useState<Limits | false>(false);
+
+  // Pulls the widget back inside the wallpaper if it ended up outside (window
+  // resized, or the Assist box opened next to an edge). It glides there.
+  const keepInside = useCallback(() => {
+    if (isDragging.current) return;
+    const max = measureLimits(
+      dragRef.current,
+      widgetRef.current,
+      panelRef.current,
+    );
+    if (!max) return;
+    setPos((p) => {
+      const x = clamp(p.x, max.left, max.right);
+      const y = clamp(p.y, max.top, max.bottom);
+      return x === p.x && y === p.y ? p : { x, y };
+    });
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("resize", keepInside);
+    return () => window.removeEventListener("resize", keepInside);
+  }, [keepInside]);
+
+  // The widget gets bigger / smaller when the Assist box opens / closes.
+  useEffect(() => {
+    keepInside();
+  }, [askOpen, keepInside]);
+
+  const handleDragStart = (x: number, y: number) => {
+    isDragging.current = true;
+    const max = measureLimits(
+      dragRef.current,
+      widgetRef.current,
+      panelRef.current,
+    );
+    // The range always includes where the widget is right now, so starting a
+    // drag can never make it jump.
+    setLimits(
+      max
+        ? {
+            left: Math.min(max.left, x),
+            right: Math.max(max.right, x),
+            top: Math.min(max.top, y),
+            bottom: Math.max(max.bottom, y),
+          }
+        : false,
+    );
+  };
+
+  // x / y arrive already held inside the limits by react-draggable, so the
+  // widget stops cleanly at the edge and stays put until the cursor comes back.
+  const handleDrag = (x: number, y: number) => {
+    setPos((p) => (p.x === x && p.y === y ? p : { x, y }));
+  };
+
+  // Draggable below: nodeRef is needed on React 19 (no findDOMNode). The pill is
+  // the handle, except its buttons, so Ask and Stop still click normally.
+  // (The onStop here is Draggable's, not the Stop button's prop.)
   return (
-    <div className={className}>
-      {/* Anchor for the Assist box: it opens right under the pill */}
-      <div style={pillAnchorStyle}>
+    <Draggable
+      nodeRef={dragRef as RefObject<HTMLElement>}
+      handle=".widget-pill"
+      cancel="button"
+      position={pos}
+      bounds={limits}
+      onStart={(_, data) => handleDragStart(data.x, data.y)}
+      onDrag={(_, data) => handleDrag(data.x, data.y)}
+      onStop={() => {
+        isDragging.current = false;
+      }}
+    >
+      <div ref={dragRef} className="widget-drag" style={dragLayerStyle}>
         <div
-          className="widget-pill"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 7,
-            height: 50,
-            padding: "5px",
-            border: "1px solid rgba(255, 255, 255, 0.15)",
-            borderRadius: 999,
-            overflow: "hidden",
-            boxSizing: "border-box",
-          }}
+          ref={widgetRef}
+          className={className}
+          style={{ pointerEvents: "auto" }}
         >
-          <style>{`
-            .widget-pill {
-              background: rgba(14, 14, 16, 0.75);
-              transition: background 0.15s ease;
-            }
-            .widget-dl-circle {
-              background: rgba(20, 20, 22, 0.85);
-              transition: background 0.15s ease;
-            }
-            .widget-hover-zoom {
-              transition: transform 0.15s ease;
-            }
-            /* Assist box: fades and slides in under the pill when Ask is clicked. */
-            .widget-panel {
-              transform-origin: top center;
-              animation: widget-panel-in 0.16s ease-out;
-            }
-            @keyframes widget-panel-in {
-              from { opacity: 0; transform: translateY(-6px) scale(0.98); }
-              to { opacity: 1; transform: none; }
-            }
-            /* Ring around the text box while you type. */
-            .widget-input-box:focus-within {
-              box-shadow: 0 0 0 1px rgba(196, 160, 255, 0.45),
-                0 0 12px rgba(139, 92, 246, 0.25);
-            }
-            @media (prefers-reduced-motion: reduce) {
-              .widget-panel { animation: none; }
-            }
-            /* Hover effects only where a mouse can hover, so touch screens
-               don't get stuck on the hovered look after a tap. */
-            @media (hover: hover) {
-              .widget-pill:hover {
-                background: rgba(210, 210, 214, 0.8);
-              }
-              .widget-hover-zoom:hover {
-                transform: scale(1.06);
-              }
-            }
-          `}</style>
-
-          {/* Round icon badge (decorative) */}
-          <div
-            className="widget-dl-circle"
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: "50%",
-              color: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <Image
-              src={iconSrc}
-              alt=""
-              width={19}
-              height={19}
-              draggable={false}
-              style={
-                {
-                  width: 19,
-                  height: 19,
-                  objectFit: "contain",
-                  WebkitUserDrag: "none",
-                  userSelect: "none",
-                  pointerEvents: "none",
-                } as CSSProperties
-              }
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={handleAskClick}
-            aria-expanded={askOpen}
-            className="widget-hover-zoom"
-            style={{
-              ...askButtonStyle,
-              ...(askOpen ? askButtonActiveStyle : {}),
-            }}
-          >
-            <RocketIcon />
-            {askOpen ? "Hide" : "Ask"}
-            {askOpen && <ChevronUpIcon />}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onStop?.()}
-            title="Stop"
-            aria-label="Stop"
-            className="widget-hover-zoom"
-            style={iconButtonStyle}
-          >
-            <SquareIcon />
-          </button>
-        </div>
-
-        {askOpen && (
-          <div style={panelAnchorStyle}>
+          {/* Anchor for the Assist box: it opens right under the pill */}
+          <div style={pillAnchorStyle}>
             <div
-              role="region"
-              aria-label="Assist"
-              className="widget-panel"
-              style={panelStyle}
+              className="widget-pill"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 7,
+                height: 50,
+                padding: "5px",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
+                borderRadius: 999,
+                overflow: "hidden",
+                boxSizing: "border-box",
+              }}
             >
-              {/* Conversation: your question, then the answer */}
-              <div style={userBubbleRowStyle}>
-                <div style={userBubbleStyle}>What should I say?</div>
-              </div>
-              <p style={answerStyle}>
-                “A discounted cash flow model values a company by projecting
-                future free cash flows and discounting them to present value
-                using the weighted average cost of capital.”
-              </p>
+              <style>{`
+                .widget-pill {
+                  background: rgba(14, 14, 16, 0.75);
+                  transition: background 0.15s ease;
+                }
+                .widget-dl-circle {
+                  background: rgba(20, 20, 22, 0.85);
+                  transition: background 0.15s ease;
+                }
+                .widget-hover-zoom {
+                  transition: transform 0.15s ease;
+                }
+                /* Assist box: fades and slides in under the pill when Ask is clicked. */
+                .widget-panel {
+                  transform-origin: top center;
+                  animation: widget-panel-in 0.16s ease-out;
+                }
+                @keyframes widget-panel-in {
+                  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+                  to { opacity: 1; transform: none; }
+                }
+                /* Ring around the text box while you type. */
+                .widget-input-box:focus-within {
+                  box-shadow: 0 0 0 1px rgba(196, 160, 255, 0.45),
+                    0 0 12px rgba(139, 92, 246, 0.25);
+                }
+                /* Dragging: grab cursor on the pill. The drag layer glides when the
+                   widget is pulled back inside the wallpaper, but has no delay while
+                   you drag, so it follows the cursor exactly. */
+                .widget-pill {
+                  cursor: grab;
+                }
+                .widget-drag {
+                  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+                }
+                .widget-drag.react-draggable-dragging {
+                  transition: none;
+                }
+                .widget-drag.react-draggable-dragging .widget-pill {
+                  cursor: grabbing;
+                }
+                @media (prefers-reduced-motion: reduce) {
+                  .widget-panel { animation: none; }
+                  .widget-drag { transition: none; }
+                }
+                /* Hover effects only where a mouse can hover, so touch screens
+                   don't get stuck on the hovered look after a tap. */
+                @media (hover: hover) {
+                  .widget-pill:hover {
+                    background: rgba(210, 210, 214, 0.8);
+                  }
+                  .widget-hover-zoom:hover {
+                    transform: scale(1.06);
+                  }
+                }
+              `}</style>
 
-              {/* Quick actions */}
-              <div style={chipsRowStyle}>
-                {assistActions.map(({ label, Icon }, i) => (
-                  <Fragment key={label}>
-                    {i > 0 && <span style={chipDotStyle} aria-hidden="true" />}
-                    <span style={chipStyle}>
-                      <Icon />
-                      {label}
-                    </span>
-                  </Fragment>
-                ))}
-              </div>
-
-              {/* Text box: type, then Enter or the send button. The text clears once it is sent. */}
-              <form
-                onSubmit={handleSend}
-                className="widget-input-box"
-                style={inputBoxStyle}
+              {/* Round icon badge (decorative) */}
+              <div
+                className="widget-dl-circle"
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: "50%",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
               >
-                <div style={inputRowStyle}>
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    aria-label="Ask about your screen or conversation"
-                    autoComplete="off"
-                    enterKeyHint="send"
-                    style={inputStyle}
-                  />
-                  {!draft && (
-                    <div aria-hidden="true" style={placeholderStyle}>
-                      Ask about your screen or conversation, or
-                      <span style={keyCapStyle}>
-                        <CommandIcon />
-                      </span>
-                      <span style={keyCapStyle}>
-                        <EnterIcon />
-                      </span>
-                      for Assist
-                    </div>
-                  )}
-                </div>
+                <Image
+                  src={iconSrc}
+                  alt=""
+                  width={19}
+                  height={19}
+                  draggable={false}
+                  style={
+                    {
+                      width: 19,
+                      height: 19,
+                      objectFit: "contain",
+                      WebkitUserDrag: "none",
+                      userSelect: "none",
+                      pointerEvents: "none",
+                    } as CSSProperties
+                  }
+                />
+              </div>
 
-                <div style={inputFooterStyle}>
-                  <div style={inputToolsStyle}>
-                    <span style={smartPillStyle}>
-                      <ZapIcon />
-                      Smart
-                    </span>
-                    <span style={moreStyle} aria-hidden="true">
-                      <EllipsisIcon />
-                    </span>
+              <button
+                type="button"
+                onClick={handleAskClick}
+                aria-expanded={askOpen}
+                className="widget-hover-zoom"
+                style={{
+                  ...askButtonStyle,
+                  ...(askOpen ? askButtonActiveStyle : {}),
+                }}
+              >
+                <RocketIcon />
+                {askOpen ? "Hide" : "Ask"}
+                {askOpen && <ChevronUpIcon />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onStop?.()}
+                title="Stop"
+                aria-label="Stop"
+                className="widget-hover-zoom"
+                style={iconButtonStyle}
+              >
+                <SquareIcon />
+              </button>
+            </div>
+
+            {askOpen && (
+              <div style={panelAnchorStyle}>
+                <div
+                  ref={panelRef}
+                  role="region"
+                  aria-label="Assist"
+                  className="widget-panel"
+                  style={panelStyle}
+                  onAnimationEnd={keepInside}
+                >
+                  {/* Conversation: your question, then the answer */}
+                  <div style={userBubbleRowStyle}>
+                    <div style={userBubbleStyle}>What should I say?</div>
+                  </div>
+                  <p style={answerStyle}>
+                    “A discounted cash flow model values a company by projecting
+                    future free cash flows and discounting them to present value
+                    using the weighted average cost of capital.”
+                  </p>
+
+                  {/* Quick actions */}
+                  <div style={chipsRowStyle}>
+                    {assistActions.map(({ label, Icon }, i) => (
+                      <Fragment key={label}>
+                        {i > 0 && (
+                          <span style={chipDotStyle} aria-hidden="true" />
+                        )}
+                        <span style={chipStyle}>
+                          <Icon />
+                          {label}
+                        </span>
+                      </Fragment>
+                    ))}
                   </div>
 
-                  <button
-                    type="submit"
-                    title="Send"
-                    aria-label="Send"
-                    className="widget-hover-zoom"
-                    style={sendButtonStyle}
+                  {/* Text box: type, then Enter or the send button. The text clears once it is sent. */}
+                  <form
+                    onSubmit={handleSend}
+                    className="widget-input-box"
+                    style={inputBoxStyle}
                   >
-                    <SendIcon />
-                  </button>
+                    <div style={inputRowStyle}>
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        aria-label="Ask about your screen or conversation"
+                        autoComplete="off"
+                        enterKeyHint="send"
+                        style={inputStyle}
+                      />
+                      {!draft && (
+                        <div aria-hidden="true" style={placeholderStyle}>
+                          Ask about your screen or conversation, or
+                          <span style={keyCapStyle}>
+                            <CommandIcon />
+                          </span>
+                          <span style={keyCapStyle}>
+                            <EnterIcon />
+                          </span>
+                          for Assist
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={inputFooterStyle}>
+                      <div style={inputToolsStyle}>
+                        <span style={smartPillStyle}>
+                          <ZapIcon />
+                          Smart
+                        </span>
+                        <span style={moreStyle} aria-hidden="true">
+                          <EllipsisIcon />
+                        </span>
+                      </div>
+
+                      <button
+                        type="submit"
+                        title="Send"
+                        aria-label="Send"
+                        className="widget-hover-zoom"
+                        style={sendButtonStyle}
+                      >
+                        <SendIcon />
+                      </button>
+                    </div>
+                  </form>
                 </div>
-              </form>
-            </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
-    </div>
+    </Draggable>
   );
 }
 
@@ -294,6 +449,17 @@ const pillAnchorStyle: CSSProperties = {
   position: "relative",
   display: "flex",
   width: "fit-content",
+};
+
+// Full-size layer that carries the drag offset. It fills the wallpaper box (the
+// nearest positioned parent), which is also the area the widget is kept inside.
+// Clicks go straight through it; the widget turns them back on. z-10 is the
+// same level the widget had before.
+const dragLayerStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  zIndex: 10,
+  pointerEvents: "none",
 };
 
 // padding: 0 and the pointer cursor make the buttons look the same on the web
