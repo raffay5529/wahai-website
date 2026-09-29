@@ -3,6 +3,20 @@
 import Header from "@/components/Header";
 import GradientText from "@/components/GradientText";
 
+// Logo files are served from your /public folder.
+// If they are inside a subfolder, set it here, e.g. "/logos".
+const LOGO_DIR = "";
+const LOGOS = {
+  zoom: `${LOGO_DIR}/zoom.webp`,
+  team: `${LOGO_DIR}/team.webp`,
+  meet: `${LOGO_DIR}/meet.webp`,
+  cisco: `${LOGO_DIR}/cisco.webp`,
+  hackerrank: `${LOGO_DIR}/hackerrank.webp`,
+  leetcode: `${LOGO_DIR}/leetcode.png`,
+  codeforce: `${LOGO_DIR}/codeforce.webp`,
+  lark: `${LOGO_DIR}/lark.webp`,
+};
+
 export default function Home() {
   return (
     <main
@@ -27,6 +41,34 @@ export default function Home() {
           boxSizing: "border-box",
         }}
       >
+        {/* Decorative white boxes: 4 on the left, 4 on the right */}
+        <div className="hero-boxes" aria-hidden="true">
+          <div className="hero-box hb-l1">
+            <img src={LOGOS.zoom} alt="" />
+          </div>
+          <div className="hero-box hb-l2">
+            <img src={LOGOS.team} alt="" />
+          </div>
+          <div className="hero-box hb-l3">
+            <img src={LOGOS.meet} alt="" />
+          </div>
+          <div className="hero-box hb-l4">
+            <img src={LOGOS.cisco} alt="" />
+          </div>
+          <div className="hero-box hb-r1">
+            <img src={LOGOS.hackerrank} alt="" />
+          </div>
+          <div className="hero-box hb-r2">
+            <img src={LOGOS.leetcode} alt="" />
+          </div>
+          <div className="hero-box hb-r3">
+            <img src={LOGOS.codeforce} alt="" />
+          </div>
+          <div className="hero-box hb-r4">
+            <img src={LOGOS.lark} alt="" />
+          </div>
+        </div>
+
         <h1
           className="hero-title"
           style={{
@@ -255,6 +297,79 @@ export default function Home() {
           .try-btn::after {
             animation: none;
           }
+        }
+
+        /* Floating white boxes (left and right of the hero) */
+        .hero-boxes {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+        }
+        .hero-box {
+          position: absolute;
+          background: #ffffff;
+          border: 1px solid rgba(255, 255, 255, 0.9);
+          border-radius: 26%;
+          box-shadow:
+            0 12px 32px rgba(0, 0, 0, 0.08),
+            0 2px 6px rgba(0, 0, 0, 0.04);
+        }
+
+        /* left side: sharp at the top, softer and fainter going down */
+        .hb-l1 { top: 24px;  left: 3%;    width: 96px; height: 96px; transform: rotate(-9deg); }
+        .hb-l2 { top: 172px; left: 10.5%; width: 80px; height: 80px; transform: rotate(7deg);   filter: blur(0.6px); }
+        .hb-l3 { top: 244px; left: 4%;    width: 68px; height: 68px; transform: rotate(-12deg); filter: blur(2.2px); opacity: 0.85; }
+        .hb-l4 { top: 340px; left: 10.5%; width: 62px; height: 62px; transform: rotate(8deg);   filter: blur(3.5px); opacity: 0.6; }
+
+        /* right side */
+        .hb-r1 { top: 42px;  right: 5%;    width: 94px; height: 94px; transform: rotate(9deg); }
+        .hb-r2 { top: 172px; right: 13.5%; width: 80px; height: 80px; transform: rotate(-7deg); filter: blur(0.6px); }
+        .hb-r3 { top: 272px; right: 8%;    width: 70px; height: 70px; transform: rotate(12deg); filter: blur(2.2px); opacity: 0.85; }
+        .hb-r4 { top: 352px; right: 16%;   width: 78px; height: 78px; transform: rotate(-8deg); filter: blur(3px);   opacity: 0.7; }
+
+        /* Hide on narrower screens so they never sit on top of the text */
+        @media (max-width: 1099px) {
+          .hero-boxes { display: none; }
+        }
+
+        /* Logos inside the boxes */
+        .hero-box {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .hero-box img {
+          display: block;
+          width: 64%;
+          height: 64%;
+          object-fit: contain;
+          user-select: none;
+        }
+
+        /* Slow, subtle "breathing" float: up and down, loops forever */
+        @keyframes hbBreathe {
+          0%, 100% { translate: 0 var(--hb-amp, 5px); }
+          50%      { translate: 0 calc(var(--hb-amp, 5px) * -1); }
+        }
+        .hero-box {
+          animation-name: hbBreathe;
+          animation-duration: var(--hb-dur, 6.5s);
+          animation-delay: var(--hb-delay, 0s);
+          animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+          animation-iteration-count: infinite;
+        }
+        /* distance, speed and start point differ per box so they never move in sync */
+        .hb-l1 { --hb-amp: 6px; --hb-dur: 6.5s; --hb-delay: -0.5s; }
+        .hb-l2 { --hb-amp: 5px; --hb-dur: 7s;   --hb-delay: -3s; }
+        .hb-l3 { --hb-amp: 4px; --hb-dur: 6s;   --hb-delay: -1.5s; }
+        .hb-l4 { --hb-amp: 4px; --hb-dur: 7.5s; --hb-delay: -4.5s; }
+        .hb-r1 { --hb-amp: 6px; --hb-dur: 7s;   --hb-delay: -2s; }
+        .hb-r2 { --hb-amp: 5px; --hb-dur: 6.5s; --hb-delay: -5s; }
+        .hb-r3 { --hb-amp: 4px; --hb-dur: 7.5s; --hb-delay: -3.5s; }
+        .hb-r4 { --hb-amp: 5px; --hb-dur: 6s;   --hb-delay: -0.8s; }
+
+        @media (prefers-reduced-motion: reduce) {
+          .hero-box { animation: none; }
         }
       `}</style>
     </main>
