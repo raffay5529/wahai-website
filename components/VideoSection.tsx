@@ -10,6 +10,45 @@ const dockApps = [
   { name: "Meet", src: "/meet.webp" },
 ];
 
+// Call videos, left to right. Files live in /public
+const callVideos = ["/a.mp4", "/b.mp4"];
+
+// Filled mic icon for the call controls bar (inherits text colour)
+function MicIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+      <rect x="9" y="1.5" width="6" height="13" rx="3" fill="currentColor" />
+      <path
+        d="M5 11.5a7 7 0 0 0 14 0M12 18.5v3.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+// Filled camera-off icon for the call controls bar (inherits text colour)
+function VideoOffIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+      <g fill="currentColor">
+        <rect x="0.5" y="5.5" width="17" height="13.5" rx="2.5" />
+        <path d="M17 10l5.2-3a.7.7 0 0 1 1.05.6v8.8a.7.7 0 0 1-1.05.6L17 14z" />
+      </g>
+      {/* Slash: a gap in the bar colour (#1c1e25) with the line drawn on top */}
+      <path d="M2.5 2.5l19 19" stroke="#1c1e25" strokeWidth="4.5" />
+      <path
+        d="M2.5 2.5l19 19"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export default function VideoSection() {
   return (
     <section
@@ -59,8 +98,50 @@ export default function VideoSection() {
               <span className="h-2.5 w-2.5 rounded-full bg-[#28c840] sm:h-3 sm:w-3" />
             </div>
 
-            {/* VIDEO SPACE: empty for now, drop your <video> or player in here later */}
-            <div className="aspect-video w-full" />
+            {/* VIDEO SPACE: a.mp4 + b.mp4 side by side, muted and looping. Padding and gap are in % so it scales with the window */}
+            <div className="grid aspect-video w-full grid-cols-2 gap-x-[2.3%] px-[1.8%] py-[3.6%]">
+              {callVideos.map((src) => (
+                <div
+                  key={src}
+                  className="relative isolate overflow-hidden rounded-md sm:rounded-lg lg:rounded-[10px]"
+                >
+                  <video
+                    src={src}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    aria-hidden="true"
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Call controls bar: Unmute + Start Video on the left, End on the right */}
+            <div
+              aria-hidden="true"
+              className="flex items-center justify-between bg-[#1c1e25] px-3 py-2 sm:px-[19px] sm:py-2.5"
+            >
+              <div className="flex items-center gap-2 whitespace-nowrap text-[#676871] sm:gap-3">
+                <div className="flex flex-col items-center gap-0.5">
+                  <MicIcon className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
+                  <span className="text-[9px] leading-[13px] sm:text-[11px]">
+                    Unmute
+                  </span>
+                </div>
+                <div className="flex flex-col items-center gap-0.5">
+                  <VideoOffIcon className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
+                  <span className="text-[9px] leading-[13px] sm:text-[11px]">
+                    Start Video
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex h-5 items-center rounded-md bg-[#6c3133] px-2 text-[11px] font-medium text-[#7f6a69] sm:h-[25px] sm:px-2.5 sm:text-[13px]">
+                End
+              </div>
+            </div>
           </div>
         </div>
 
