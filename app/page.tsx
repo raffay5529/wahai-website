@@ -2,6 +2,7 @@
 
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
+import VideoSection from "@/components/VideoSection";
 
 export default function Home() {
   return (
@@ -12,6 +13,7 @@ export default function Home() {
     >
       <Header />
       <HeroSection />
+      <VideoSection/>
     </main>
   );
 }
