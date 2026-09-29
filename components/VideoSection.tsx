@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Settings2, Wifi } from "lucide-react";
+import Widget from "./Widget";
 
 // Dock icons, left to right. Files live in /public
 const dockApps = [
@@ -89,6 +90,10 @@ export default function VideoSection() {
 
         {/* Room above the window for the floating pill later */}
         <div className="relative flex justify-center px-4 pb-10 pt-10 sm:px-10 sm:pb-16 sm:pt-16 lg:px-0 lg:pb-28 lg:pt-24">
+          {/* Widget pill: centred in the strip of wallpaper between the menu bar and the window.
+              top-* centres it in that strip at each breakpoint; scale-* shrinks it with the rest of the mock on smaller screens */}
+          <Widget className="absolute left-1/2 top-[7px] z-10 w-max -translate-x-1/2 scale-[0.4] sm:top-[21px] sm:scale-[0.7] lg:top-[37px] lg:scale-100" />
+
           {/* Black window frame */}
           <div className="w-full overflow-hidden rounded-xl bg-[#05070b] shadow-[0_28px_70px_rgba(0,0,0,0.45)] ring-1 ring-white/10 sm:rounded-2xl lg:w-[68%]">
             {/* Title bar with traffic lights */}
