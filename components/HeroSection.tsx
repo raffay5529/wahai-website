@@ -1,6 +1,14 @@
 "use client";
 
+import { Lora } from "next/font/google";
 import GradientText from "@/components/GradientText";
+
+// Softer italic serif, used only for the word "Undetectable".
+const undetectableFont = Lora({
+  subsets: ["latin"],
+  style: ["italic"],
+  display: "swap",
+});
 
 // Logo files are served from your /public folder.
 // If they are inside a subfolder, set it here, e.g. "/logos".
@@ -80,7 +88,7 @@ export default function HeroSection() {
             colors={["#6d28d9", "#a855f7", "#6d28d9"]}
             animationSpeed={2}
             showBorder={false}
-            className="hero-gradient"
+            className={`hero-gradient ${undetectableFont.className}`}
           >
             Undetectable
           </GradientText>
