@@ -1,6 +1,15 @@
 import Image from "next/image";
 import { Settings2, Wifi } from "lucide-react";
 
+// Dock icons, left to right. Files live in /public
+const dockApps = [
+  { name: "Wah", src: "/wahlogo.png" },
+  { name: "Safari", src: "/safari.png" },
+  { name: "Settings", src: "/settings.png" },
+  { name: "Zoom", src: "/zoom.webp" },
+  { name: "Meet", src: "/meet.webp" },
+];
+
 export default function VideoSection() {
   return (
     <section
@@ -53,6 +62,23 @@ export default function VideoSection() {
             {/* VIDEO SPACE: empty for now, drop your <video> or player in here later */}
             <div className="aspect-video w-full" />
           </div>
+        </div>
+
+        {/* macOS Dock: bottom centre of the wallpaper, sits in the padding under the window */}
+        <div
+          aria-hidden="true"
+          className="absolute bottom-1 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-white/40 bg-white/25 p-1 shadow-[0_8px_24px_-6px_rgba(20,10,60,0.35),inset_0_1px_0_rgba(255,255,255,0.4)] backdrop-blur-xl sm:bottom-2 sm:gap-1.5 sm:rounded-2xl lg:bottom-3 lg:gap-2.5 lg:rounded-3xl lg:p-1.5"
+        >
+          {dockApps.map((app) => (
+            <Image
+              key={app.name}
+              src={app.src}
+              alt=""
+              width={128}
+              height={128}
+              className="h-5 w-5 object-contain sm:h-8 sm:w-8 lg:h-12 lg:w-12"
+            />
+          ))}
         </div>
       </div>
     </section>
