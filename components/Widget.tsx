@@ -85,7 +85,7 @@ function measureLimits(
 
 export default function Widget({
   iconSrc = "/wahlogo.png",
-  defaultAskOpen = false,
+  defaultAskOpen = true,
   onAskToggle,
   onSend,
   onStop,
