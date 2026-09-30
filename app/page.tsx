@@ -21,11 +21,19 @@ export default function Home() {
       <Header />
       <HeroSection />
       <VideoSection/>
-      <FeatureSection/>
-      <MeetingSection/>
+      <div id="features" className="scroll-mt-24">
+        <FeatureSection/>
+      </div>
+      <div id="meeting" className="scroll-mt-24">
+        <MeetingSection/>
+      </div>
       <UndetectableSection/>
-      <PricingSection/>
-      <FaqSection/>
+      <div id="pricing" className="scroll-mt-24">
+        <PricingSection/>
+      </div>
+      <div id="faq" className="scroll-mt-24">
+        <FaqSection/>
+      </div>
       <ResponsibleSection/>
       <FooterSection/>
     </main>

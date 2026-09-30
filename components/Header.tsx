@@ -3,7 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+} from "react";
 
 /* -------------------------------------------------------------------------- */
 /*  Edit these                                                                */
@@ -17,12 +23,13 @@ const BRAND = { name: "Wah", badge: "AI" };
 const BRAND_LABEL =
   [BRAND.name, BRAND.badge].filter(Boolean).join(" ") || "Home";
 
+// The part after "#" must match the id of the wrapper div in page.tsx.
 const NAV_LINKS = [
   { label: "Call Assistant", href: "/" },
-  { label: "Features", href: "/#features" },
-  { label: "Meeting", href: "/#reviews" },
-  { label: "Pricing", href: "/#privacy" },
-  { label: "FAQ", href: "/#pricing" },
+  { label: "Features", href: "/#features" }, // FeatureSection
+  { label: "Meeting", href: "/#meeting" }, // MeetingSection
+  { label: "Pricing", href: "/#pricing" }, // PricingSection
+  { label: "FAQ", href: "/#faq" }, // FaqSection
 ];
 
 
@@ -91,6 +98,27 @@ export default function Header() {
     setMenuOpen(false);
     setPrepareOpen(false);
   }, []);
+
+  // Smooth-scroll to a section on the home page when a "/#id" link is clicked.
+  // On any other page the link falls back to normal navigation to "/#id".
+  const handleNavClick = (e: MouseEvent<HTMLAnchorElement>, href: string) => {
+    closeAll();
+
+    const id = href.split("#")[1];
+    if (!id || pathname !== "/") return;
+
+    const target = document.getElementById(id);
+    if (!target) return;
+
+    e.preventDefault();
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    target.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "start",
+    });
+  };
 
   // Close the dropdown / mobile menu on outside click or Escape.
   useEffect(() => {
@@ -225,6 +253,7 @@ export default function Header() {
                 <Link
                   key={href}
                   href={href}
+                  onClick={(e) => handleNavClick(e, href)}
                   aria-current={active ? "page" : undefined}
                   className={`${navLink} ${active ? navLinkActive : navLinkIdle}`}
                 >
@@ -260,12 +289,7 @@ export default function Header() {
 
           {/* Actions */}
           <div className="col-start-3 flex items-center gap-2 justify-self-end">
-            <Link
-              href={SIGN_IN_HREF}
-              className={`${buttonLight} hidden px-4 sm:inline-flex`}
-            >
-              Sign in
-            </Link>
+           
             <Link href={CTA_HREF} className={`${buttonDark} inline-flex px-4`}>
               Try for Free
             </Link>
@@ -297,7 +321,7 @@ export default function Header() {
                   <Link
                     key={href}
                     href={href}
-                    onClick={closeAll}
+                    onClick={(e) => handleNavClick(e, href)}
                     aria-current={active ? "page" : undefined}
                     className={`rounded-xl px-3 py-2.5 text-base font-medium ${focusRing} ${
                       active
@@ -313,13 +337,7 @@ export default function Header() {
             
             </nav>
 
-            <Link
-              href={SIGN_IN_HREF}
-              onClick={closeAll}
-              className={`${buttonLight} mt-3 flex w-full sm:hidden`}
-            >
-              Sign in
-            </Link>
+           
           </div>
         )}
       </div>
