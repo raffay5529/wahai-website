@@ -35,6 +35,15 @@ const PREPARE_LINKS = [
 const SIGN_IN_HREF = "/sign-in";
 const CTA_HREF = "/sign-up";
 
+// Hide on scroll: while scrolling down, the header blurs and slides out of view
+// as soon as this element (the demo section in VideoSection) reaches the bottom
+// of the header. Scrolling up brings it straight back. Above that point it
+// always stays visible. If the element isn't on the page, the header just stays
+// visible.
+const HIDE_TARGET = 'section[aria-label="Product demo"]';
+// Fine-tune when it hides, in px: positive = hides earlier, negative = later.
+const HIDE_OFFSET = 0;
+
 /* -------------------------------------------------------------------------- */
 /*  Styles                                                                    */
 /* -------------------------------------------------------------------------- */
@@ -49,6 +58,13 @@ const trimToCaps = "[text-box:trim-both_cap_alphabetic]";
 // White floating surface used by the bar and both dropdown panels.
 const surface =
   "bg-white ring-1 ring-black/5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_-4px_rgba(16,24,40,0.10)]";
+
+// Hide-on-scroll motion: the whole header slides up, blurs and fades out, and
+// plays in reverse when it comes back. `invisible` lands at the end of the
+// transition, so a hidden header can't be tabbed into.
+const headerMotion =
+  "transition-all duration-500 ease-in-out motion-reduce:transition-none";
+const headerAway = "invisible -translate-y-full opacity-0 blur-md";
 
 const buttonShape = `h-11 cursor-pointer items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium transition-colors motion-reduce:transition-none ${focusRing}`;
 const buttonLight = `${buttonShape} border border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50`;
@@ -67,10 +83,12 @@ export default function Header() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [prepareOpen, setPrepareOpen] = useState(false);
+  const [hideHeader, setHideHeader] = useState(false);
 
   const headerRef = useRef<HTMLElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const prepareButtonRef = useRef<HTMLButtonElement>(null);
+  const hiddenRef = useRef(false);
 
   const isActive = (href: string) => pathname === href;
 
@@ -100,10 +118,66 @@ export default function Header() {
     };
   }, [menuOpen, prepareOpen, closeAll]);
 
+  // Hide the header while scrolling down once the demo section reaches it,
+  // and show it again the moment the user scrolls up.
+  useEffect(() => {
+    let lastY = window.scrollY;
+    let frame = 0;
+
+    const setHidden = (next: boolean) => {
+      if (hiddenRef.current === next) return;
+      hiddenRef.current = next;
+      setHideHeader(next);
+      // Don't leave a dropdown / mobile menu open behind a hidden header.
+      if (next) closeAll();
+    };
+
+    const update = () => {
+      frame = 0;
+
+      const header = headerRef.current;
+      const target = document.querySelector(HIDE_TARGET);
+      if (!header || !target) {
+        setHidden(false);
+        return;
+      }
+
+      // Clamped so rubber-band overscroll (iOS / macOS) never counts as scrolling up.
+      const maxY = Math.max(
+        0,
+        document.documentElement.scrollHeight -
+          document.documentElement.clientHeight,
+      );
+      const y = Math.min(Math.max(window.scrollY, 0), maxY);
+      const delta = y - lastY;
+      lastY = y;
+
+      // offsetHeight ignores the slide transform, so this stays right while hidden.
+      const reached =
+        target.getBoundingClientRect().top <= header.offsetHeight + HIDE_OFFSET;
+
+      if (!reached) setHidden(false);
+      else if (delta > 0) setHidden(true);
+      else if (delta < 0) setHidden(false);
+    };
+
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [closeAll]);
+
   return (
     <header
       ref={headerRef}
-      className="pointer-events-none sticky top-0 z-50 px-2 pt-3"
+      className={`pointer-events-none sticky top-0 z-50 px-2 pt-3 ${headerMotion} ${
+        hideHeader ? headerAway : ""
+      }`}
     >
       <div className="pointer-events-auto relative mx-auto max-w-[1440px]">
         {/* Bar */}
