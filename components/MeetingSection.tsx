@@ -16,7 +16,18 @@ import {
   WandSparkles,
   Zap,
 } from "lucide-react";
-import { Fragment, useEffect, useState, type ReactNode } from "react";
+import {
+  Fragment,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
+
+gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 // Product name used in the copy (replaces the reference brand name).
 const PRODUCT_NAME = "Wah";
@@ -92,7 +103,7 @@ function Recording() {
   const s = seconds % 60;
 
   return (
-    <div aria-hidden="true" className="mt-5 text-center">
+    <div aria-hidden="true" className="mtg-rec mt-5 text-center">
       <div className="text-[44px] font-semibold leading-[52px] tabular-nums tracking-tight text-white/65">
         <Digit
           key={`m1-${Math.floor(m / 10)}`}
@@ -134,7 +145,7 @@ function Waveform() {
   return (
     <div
       aria-hidden="true"
-      className="mx-auto mt-14 h-10 w-full max-w-[504px] overflow-hidden"
+      className="mtg-wave mx-auto mt-14 h-10 w-full max-w-[504px] overflow-hidden"
       style={{ WebkitMaskImage: FADE_EDGES, maskImage: FADE_EDGES }}
     >
       <div className="wah-wave flex w-max">
@@ -217,12 +228,140 @@ function AssistFooter() {
 }
 
 export default function MeetingSection() {
+  const container = useRef<HTMLElement>(null);
+
+  // Plays once when the section scrolls into view, soft and slow:
+  // the heading rises first. When the cards come into view they rise one
+  // after the other, then their text, then the timer, audio line, faded
+  // Assist preview (left) and the widget pill and Assist box (right).
+  useGSAP(
+    () => {
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
+
+      // Respect reduced motion: show everything, no animation.
+      if (reduceMotion) {
+        gsap.set(
+          [
+            ".mtg-head",
+            ".mtg-card",
+            ".mtg-item",
+            ".mtg-rec",
+            ".mtg-wave",
+            ".mtg-foot",
+            ".mtg-pill",
+            ".mtg-box",
+          ],
+          { opacity: 1 }
+        );
+        return;
+      }
+
+      // Heading
+      gsap.fromTo(
+        ".mtg-head",
+        { opacity: 0, y: 24 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.9,
+          ease: "power3.out",
+          clearProps: "transform",
+          scrollTrigger: {
+            trigger: container.current,
+            start: "top 80%",
+            once: true,
+          },
+        }
+      );
+
+      // Cards and everything inside them
+      const grid = container.current?.querySelector(".mtg-grid");
+
+      const tl = gsap.timeline({
+        defaults: { ease: "power3.out" },
+        scrollTrigger: {
+          trigger: grid ?? container.current,
+          start: "top 75%",
+          once: true,
+        },
+      });
+
+      tl.fromTo(
+        ".mtg-card",
+        { opacity: 0, y: 36 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          stagger: 0.15,
+          clearProps: "transform",
+        }
+      )
+        .fromTo(
+          ".mtg-item",
+          { opacity: 0, y: 14 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.7,
+            stagger: 0.1,
+            clearProps: "transform",
+          },
+          0.3
+        )
+        .fromTo(
+          ".mtg-rec",
+          { opacity: 0, y: 16 },
+          { opacity: 1, y: 0, duration: 0.8, clearProps: "transform" },
+          0.6
+        )
+        .fromTo(
+          ".mtg-pill",
+          { opacity: 0, y: 16 },
+          { opacity: 1, y: 0, duration: 0.8, clearProps: "transform" },
+          0.7
+        )
+        .fromTo(
+          ".mtg-wave",
+          { opacity: 0, y: 12 },
+          { opacity: 1, y: 0, duration: 0.8, clearProps: "transform" },
+          0.75
+        )
+        .fromTo(
+          ".mtg-box",
+          { opacity: 0, y: 24 },
+          { opacity: 1, y: 0, duration: 0.9, clearProps: "transform" },
+          0.85
+        )
+        .fromTo(
+          ".mtg-foot",
+          { opacity: 0, y: 16 },
+          { opacity: 1, y: 0, duration: 0.8, clearProps: "transform" },
+          0.9
+        );
+    },
+    { scope: container }
+  );
+
   return (
     <section
+      ref={container}
       aria-labelledby="meeting-heading"
       className="w-full px-4 pb-24 pt-4 sm:px-6"
     >
       <style>{`
+        /* Start hidden so there is no flash before the scroll animation runs */
+        .mtg-head,
+        .mtg-card,
+        .mtg-item,
+        .mtg-rec,
+        .mtg-wave,
+        .mtg-foot,
+        .mtg-pill,
+        .mtg-box { opacity: 0; }
+
         .wah-wave { animation: wahWave 12s linear infinite; }
         @keyframes wahWave { to { transform: translateX(-33.3333%); } }
 
@@ -241,6 +380,14 @@ export default function MeetingSection() {
         @keyframes wahDigitOut { to { opacity: 0; transform: translateX(-0.6em); } }
 
         @media (prefers-reduced-motion: reduce) {
+          .mtg-head,
+          .mtg-card,
+          .mtg-item,
+          .mtg-rec,
+          .mtg-wave,
+          .mtg-foot,
+          .mtg-pill,
+          .mtg-box { opacity: 1; }
           .wah-wave, .wah-digit-in, .wah-digit-out { animation: none; }
           .wah-digit-out { display: none; }
         }
@@ -249,7 +396,7 @@ export default function MeetingSection() {
       <div className="mx-auto w-full max-w-6xl">
         <h2
           id="meeting-heading"
-          className="m-0 w-fit bg-clip-text font-medium text-transparent"
+          className="mtg-head m-0 w-fit bg-clip-text font-medium text-transparent"
           style={{
             fontSize: "clamp(2rem, 4.6vw, 3.5rem)",
             lineHeight: 1.1,
@@ -261,13 +408,13 @@ export default function MeetingSection() {
           How {PRODUCT_NAME} helps during a meeting
         </h2>
 
-        <div className="mt-10 grid gap-7 md:grid-cols-2">
+        <div className="mtg-grid mt-10 grid gap-7 md:grid-cols-2">
           {/* Left card: listens */}
           <article
-            className="flex flex-col overflow-hidden rounded-[32px] px-6 py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] sm:rounded-[40px] sm:px-10 sm:py-10"
+            className="mtg-card flex flex-col overflow-hidden rounded-[32px] px-6 py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] sm:rounded-[40px] sm:px-10 sm:py-10"
             style={{ background: LEFT_BG }}
           >
-            <h3 className="m-0 text-[26px] font-medium leading-[38px] tracking-[-0.01em] text-white">
+            <h3 className="mtg-item m-0 text-[26px] font-medium leading-[38px] tracking-[-0.01em] text-white">
               {PRODUCT_NAME}{" "}
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-0.5 leading-[1.2] ring-1 ring-inset ring-white/40">
                 <AudioLines size={20} />
@@ -275,7 +422,7 @@ export default function MeetingSection() {
               </span>{" "}
               in to the conversation
             </h3>
-            <p className="m-0 mt-3 max-w-[30rem] text-base leading-[26px] text-white/85 sm:text-[17px]">
+            <p className="mtg-item m-0 mt-3 max-w-[30rem] text-base leading-[26px] text-white/85 sm:text-[17px]">
               It picks up the context of your meeting in real time, so it can
               help when you need it.
             </p>
@@ -284,7 +431,7 @@ export default function MeetingSection() {
             <Waveform />
 
             {/* Faded preview of the Assist box */}
-            <div aria-hidden="true" className="mt-auto pt-10">
+            <div aria-hidden="true" className="mtg-foot mt-auto pt-10">
               <div
                 className="flex flex-col gap-3 rounded-[18px] border border-white/15 p-4 opacity-60"
                 style={{ background: "rgba(45,20,120,0.3)" }}
@@ -296,17 +443,17 @@ export default function MeetingSection() {
 
           {/* Right card: assists */}
           <article
-            className="flex flex-col overflow-hidden rounded-[32px] px-6 py-8 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.8),0_10px_40px_-12px_rgba(30,20,80,0.15)] sm:rounded-[40px] sm:px-10 sm:py-10"
+            className="mtg-card flex flex-col overflow-hidden rounded-[32px] px-6 py-8 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.8),0_10px_40px_-12px_rgba(30,20,80,0.15)] sm:rounded-[40px] sm:px-10 sm:py-10"
             style={{ background: RIGHT_BG }}
           >
-            <h3 className="m-0 text-[26px] font-medium leading-[38px] tracking-[-0.01em] text-[#151515]">
+            <h3 className="mtg-item m-0 text-[26px] font-medium leading-[38px] tracking-[-0.01em] text-[#151515]">
               When you need help, {PRODUCT_NAME}{" "}
               <span className="-mx-1.5 inline-flex items-center rounded-full bg-white/80 px-2 py-0.5 leading-[1.2] shadow-[0_1px_2px_rgba(30,20,80,0.06)]">
                 assists
               </span>{" "}
               you instantly
             </h3>
-            <p className="m-0 mt-3 max-w-[30rem] text-base leading-[26px] text-[#9ca3af] sm:text-[17px]">
+            <p className="mtg-item m-0 mt-3 max-w-[30rem] text-base leading-[26px] text-[#9ca3af] sm:text-[17px]">
               Hit Cmd/Ctrl + Enter and {PRODUCT_NAME} helps you with AI in the
               moment.
             </p>
@@ -316,7 +463,7 @@ export default function MeetingSection() {
               aria-hidden="true"
               className="mt-6 flex flex-col items-center gap-2"
             >
-              <div className="flex items-center gap-[7px] rounded-full border border-white/15 bg-[#3f3f43] p-[5px]">
+              <div className="mtg-pill flex items-center gap-[7px] rounded-full border border-white/15 bg-[#3f3f43] p-[5px]">
                 <span className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#1c1c1e]">
                   <Image
                     src="/wahlogo.png"
@@ -343,7 +490,7 @@ export default function MeetingSection() {
                 </span>
               </div>
 
-              <div className="flex w-full max-w-[520px] flex-col gap-3 rounded-[18px] border border-white/15 bg-[#4a4a4e] p-4 text-white shadow-[0_12px_32px_-8px_rgba(20,15,50,0.35)]">
+              <div className="mtg-box flex w-full max-w-[520px] flex-col gap-3 rounded-[18px] border border-white/15 bg-[#4a4a4e] p-4 text-white shadow-[0_12px_32px_-8px_rgba(20,15,50,0.35)]">
                 <div className="flex justify-end">
                   <span
                     className="rounded-full border border-[#c4a0ff]/40 px-3.5 py-[5px] text-xs font-semibold shadow-[0_0_12px_rgba(139,92,246,0.45),0_2px_4px_rgba(0,0,0,0.2)]"

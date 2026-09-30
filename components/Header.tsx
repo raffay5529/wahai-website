@@ -20,17 +20,12 @@ const BRAND_LABEL =
 const NAV_LINKS = [
   { label: "Call Assistant", href: "/" },
   { label: "Features", href: "/#features" },
-  { label: "Reviews", href: "/#reviews" },
-  { label: "Privacy", href: "/#privacy" },
-  { label: "Pricing", href: "/#pricing" },
+  { label: "Meeting", href: "/#reviews" },
+  { label: "Pricing", href: "/#privacy" },
+  { label: "FAQ", href: "/#pricing" },
 ];
 
-// Items inside the "Prepare" dropdown.
-const PREPARE_LINKS = [
-  { label: "Interview prep", href: "/prepare/interviews" },
-  { label: "Practice questions", href: "/prepare/questions" },
-  { label: "Guides", href: "/prepare/guides" },
-];
+
 
 const SIGN_IN_HREF = "/sign-in";
 const CTA_HREF = "/sign-up";
@@ -256,32 +251,10 @@ export default function Header() {
                   prepareOpen ? "text-zinc-900" : navLinkIdle
                 }`}
               >
-                Prepare
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform motion-reduce:transition-none ${
-                    prepareOpen ? "rotate-180" : ""
-                  }`}
-                />
+               
               </button>
 
-              {prepareOpen && (
-                <ul
-                  id="prepare-menu"
-                  className={`absolute left-1/2 top-full z-10 mt-7 w-56 -translate-x-1/2 rounded-2xl p-2 ${surface}`}
-                >
-                  {PREPARE_LINKS.map(({ label, href }) => (
-                    <li key={href}>
-                      <Link
-                        href={href}
-                        onClick={closeAll}
-                        className={`block rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 motion-reduce:transition-none ${focusRing}`}
-                      >
-                        {label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
+             
             </div>
           </nav>
 
@@ -337,17 +310,7 @@ export default function Header() {
                 );
               })}
 
-              <p className="px-3 pb-1 pt-3 text-sm text-zinc-500">Prepare</p>
-              {PREPARE_LINKS.map(({ label, href }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={closeAll}
-                  className={`rounded-xl px-3 py-2.5 text-base font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 ${focusRing}`}
-                >
-                  {label}
-                </Link>
-              ))}
+            
             </nav>
 
             <Link

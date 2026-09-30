@@ -1,6 +1,14 @@
+"use client";
+
+import { useRef } from "react";
 import Image from "next/image";
 import { Settings2, Wifi } from "lucide-react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
 import Widget from "./Widget";
+
+gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 // Dock icons, left to right. Files live in /public
 const dockApps = [
@@ -51,11 +59,101 @@ function VideoOffIcon({ className }: { className?: string }) {
 }
 
 export default function VideoSection() {
+  const container = useRef<HTMLElement>(null);
+
+  // Plays once when the section scrolls into view. The macOS background is
+  // always visible; only what sits on top animates:
+  // 1) the call window rises and settles,
+  // 2) menu bar, videos, widget pill and dock fade in.
+  useGSAP(
+    () => {
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
+
+      // Respect reduced motion: show everything, no animation.
+      if (reduceMotion) {
+        gsap.set(
+          [
+            ".vs-menubar",
+            ".vs-window",
+            ".vs-video",
+            ".vs-widget",
+            ".vs-dock",
+          ],
+          { opacity: 1 }
+        );
+        return;
+      }
+
+      const tl = gsap.timeline({
+        defaults: { ease: "power3.out" },
+        scrollTrigger: {
+          trigger: container.current,
+          start: "top 70%",
+          once: true,
+        },
+      });
+
+      tl.fromTo(
+        ".vs-window",
+        { opacity: 0, y: 60, scale: 0.95 },
+        { opacity: 1, y: 0, scale: 1, duration: 1.3, ease: "expo.out" }
+      )
+        .fromTo(
+          ".vs-menubar",
+          { opacity: 0 },
+          { opacity: 1, duration: 0.6 },
+          0.2
+        )
+        .fromTo(
+          ".vs-video",
+          { opacity: 0 },
+          { opacity: 1, duration: 0.8, stagger: 0.15 },
+          0.5
+        )
+        .fromTo(
+          ".vs-widget",
+          { opacity: 0 },
+          { opacity: 1, duration: 0.7 },
+          0.6
+        )
+        .fromTo(
+          ".vs-dock",
+          { opacity: 0 },
+          { opacity: 1, duration: 0.7 },
+          0.7
+        );
+    },
+    { scope: container }
+  );
+
   return (
     <section
+      ref={container}
       aria-label="Product demo"
       className="w-full px-4 pb-24 pt-4 sm:px-6"
     >
+      {/* Start hidden so there is no flash before the scroll animation runs */}
+      <style>{`
+        .vs-menubar,
+        .vs-window,
+        .vs-video,
+        .vs-widget,
+        .vs-dock {
+          opacity: 0;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .vs-menubar,
+          .vs-window,
+          .vs-video,
+          .vs-widget,
+          .vs-dock {
+            opacity: 1;
+          }
+        }
+      `}</style>
+
       {/* macOS desktop: wallpaper served from /public/macos.png */}
       <div className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-3xl shadow-[0_30px_80px_-24px_rgba(30,20,80,0.4)] ring-1 ring-black/5 sm:rounded-[32px]">
         <Image
@@ -71,7 +169,7 @@ export default function VideoSection() {
         {/* macOS menu bar: logo on the left, status icons on the right */}
         <div
           aria-hidden="true"
-          className="absolute inset-x-0 top-0 z-10 flex h-6 items-center justify-between bg-black/10 px-3 backdrop-blur-sm sm:h-7 sm:px-4"
+          className="vs-menubar absolute inset-x-0 top-0 z-10 flex h-6 items-center justify-between bg-black/10 px-3 backdrop-blur-sm sm:h-7 sm:px-4"
         >
           {/* Logo from /public/wahlogo.png (brightness-0 invert makes it white; remove both to keep its original colors) */}
           <Image
@@ -92,10 +190,10 @@ export default function VideoSection() {
         <div className="relative flex justify-center px-4 pb-10 pt-10 sm:px-10 sm:pb-16 sm:pt-16 lg:px-0 lg:pb-28 lg:pt-24">
           {/* Widget pill: centred in the strip of wallpaper between the menu bar and the window.
               top-* centres it in that strip at each breakpoint; scale-* shrinks it with the rest of the mock on smaller screens */}
-          <Widget className="absolute left-1/2 top-[7px] z-10 w-max -translate-x-1/2 scale-[0.4] sm:top-[21px] sm:scale-[0.7] lg:top-[37px] lg:scale-100" />
+          <Widget className="vs-widget absolute left-1/2 top-[7px] z-10 w-max -translate-x-1/2 scale-[0.4] sm:top-[21px] sm:scale-[0.7] lg:top-[37px] lg:scale-100" />
 
           {/* Black window frame */}
-          <div className="w-full overflow-hidden rounded-xl bg-[#05070b] shadow-[0_28px_70px_rgba(0,0,0,0.45)] ring-1 ring-white/10 sm:rounded-2xl lg:w-[68%]">
+          <div className="vs-window w-full overflow-hidden rounded-xl bg-[#05070b] shadow-[0_28px_70px_rgba(0,0,0,0.45)] ring-1 ring-white/10 sm:rounded-2xl lg:w-[68%]">
             {/* Title bar with traffic lights */}
             <div className="flex h-8 items-center gap-2 bg-[#1b1c20] px-4 sm:h-9">
               <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57] sm:h-3 sm:w-3" />
@@ -108,7 +206,7 @@ export default function VideoSection() {
               {callVideos.map((src) => (
                 <div
                   key={src}
-                  className="relative isolate overflow-hidden rounded-md sm:rounded-lg lg:rounded-[10px]"
+                  className="vs-video relative isolate overflow-hidden rounded-md sm:rounded-lg lg:rounded-[10px]"
                 >
                   <video
                     src={src}
@@ -153,7 +251,7 @@ export default function VideoSection() {
         {/* macOS Dock: bottom centre of the wallpaper, sits in the padding under the window */}
         <div
           aria-hidden="true"
-          className="absolute bottom-1 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-white/40 bg-white/25 p-1 shadow-[0_8px_24px_-6px_rgba(20,10,60,0.35),inset_0_1px_0_rgba(255,255,255,0.4)] backdrop-blur-xl sm:bottom-2 sm:gap-1.5 sm:rounded-2xl lg:bottom-3 lg:gap-2.5 lg:rounded-3xl lg:p-1.5"
+          className="vs-dock absolute bottom-1 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-white/40 bg-white/25 p-1 shadow-[0_8px_24px_-6px_rgba(20,10,60,0.35),inset_0_1px_0_rgba(255,255,255,0.4)] backdrop-blur-xl sm:bottom-2 sm:gap-1.5 sm:rounded-2xl lg:bottom-3 lg:gap-2.5 lg:rounded-3xl lg:p-1.5"
         >
           {dockApps.map((app) => (
             <Image

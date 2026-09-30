@@ -97,6 +97,7 @@ export default function HeroSection() {
         </h1>
 
         <p
+          className="hero-sub"
           style={{
             margin: "18px 0 0",
             maxWidth: "620px",
@@ -113,6 +114,7 @@ export default function HeroSection() {
         </p>
 
         <div
+          className="hero-actions"
           style={{
             display: "flex",
             alignItems: "center",
@@ -182,6 +184,26 @@ export default function HeroSection() {
 
       {/* Lets GradientText sit inline inside the heading instead of as its own block */}
       <style>{`
+        /* Fast load-in: heading first, then paragraph, then buttons.
+           Pure CSS, so it starts right away without waiting for JavaScript.
+           To change the speed, edit the 0.8s durations and the delays. */
+        @keyframes heroIn {
+          from { opacity: 0; transform: translateY(28px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .hero-title,
+        .hero-sub,
+        .hero-actions {
+          animation: heroIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .hero-sub     { animation-delay: 0.2s; }
+        .hero-actions { animation-delay: 0.4s; }
+        @media (prefers-reduced-motion: reduce) {
+          .hero-title,
+          .hero-sub,
+          .hero-actions { animation: none; }
+        }
+
         /* Soft bluish wash at the top of the page. It fades out into the default
            page background (globals.css) by the bottom of the hero.
            --hero-glow-offset: pulls the wash up behind the header (roughly the

@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import {
   ArrowDown,
@@ -17,7 +19,12 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
+
+gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 const PRODUCT_NAME = "Wah";
 
@@ -80,7 +87,7 @@ function ParticipantsVisual() {
           {PEOPLE.map((p) => (
             <li
               key={p.email}
-              className="flex items-center gap-2.5 border-t border-[#eef0f6] py-2 first:border-t-0"
+              className="und-row flex items-center gap-2.5 border-t border-[#eef0f6] py-2 first:border-t-0"
             >
               <span
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
@@ -300,12 +307,110 @@ const CARDS = [
 ];
 
 export default function UndetectableSection() {
+  const container = useRef<HTMLElement>(null);
+
+  // Plays once, soft and slow. The heading and subtitle rise first. Each card
+  // then animates as it scrolls into view: the tile rises, its text follows,
+  // and the participant rows in card 1 appear one after the other.
+  useGSAP(
+    () => {
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
+
+      // Respect reduced motion: show everything, no animation.
+      if (reduceMotion) {
+        gsap.set(
+          [".und-head", ".und-sub", ".und-tile", ".und-text", ".und-row"],
+          { opacity: 1 }
+        );
+        return;
+      }
+
+      // Heading + subtitle
+      gsap
+        .timeline({
+          defaults: { ease: "power3.out" },
+          scrollTrigger: {
+            trigger: container.current,
+            start: "top 80%",
+            once: true,
+          },
+        })
+        .fromTo(
+          ".und-head",
+          { opacity: 0, y: 24 },
+          { opacity: 1, y: 0, duration: 0.9, clearProps: "transform" }
+        )
+        .fromTo(
+          ".und-sub",
+          { opacity: 0, y: 16 },
+          { opacity: 1, y: 0, duration: 0.8, clearProps: "transform" },
+          0.12
+        );
+
+      // Cards: cards that enter together (desktop row) are staggered,
+      // cards that enter one by one (mobile) each play on their own.
+      const cards = Array.from(
+        container.current?.querySelectorAll<HTMLElement>(".und-card") ?? []
+      );
+
+      ScrollTrigger.batch(cards, {
+        start: "top 85%",
+        once: true,
+        onEnter: (batch) => {
+          batch.forEach((card, i) => {
+            const q = gsap.utils.selector(card);
+
+            gsap
+              .timeline({
+                defaults: { ease: "power3.out" },
+                delay: i * 0.15,
+              })
+              .fromTo(
+                q(".und-tile"),
+                { opacity: 0, y: 36 },
+                { opacity: 1, y: 0, duration: 1, clearProps: "transform" }
+              )
+              .fromTo(
+                q(".und-row"),
+                { opacity: 0, y: 10 },
+                {
+                  opacity: 1,
+                  y: 0,
+                  duration: 0.6,
+                  stagger: 0.08,
+                  clearProps: "transform",
+                },
+                0.5
+              )
+              .fromTo(
+                q(".und-text"),
+                { opacity: 0, y: 14 },
+                { opacity: 1, y: 0, duration: 0.8, clearProps: "transform" },
+                0.35
+              );
+          });
+        },
+      });
+    },
+    { scope: container }
+  );
+
   return (
     <section
+      ref={container}
       aria-labelledby="undetectable-heading"
       className="w-full px-4 pb-24 pt-4 sm:px-6"
     >
       <style>{`
+        /* Start hidden so there is no flash before the scroll animation runs */
+        .und-head,
+        .und-sub,
+        .und-tile,
+        .und-text,
+        .und-row { opacity: 0; }
+
         /* The divider in card 2 slowly sweeps left and right.
            Everything (divider, outline, AI answer) reads --wah-split. */
         @property --wah-split {
@@ -322,6 +427,11 @@ export default function UndetectableSection() {
         .wah-divider { left: var(--wah-split); }
 
         @media (prefers-reduced-motion: reduce) {
+          .und-head,
+          .und-sub,
+          .und-tile,
+          .und-text,
+          .und-row { opacity: 1; }
           .wah-split { animation: none; }
         }
       `}</style>
@@ -329,7 +439,7 @@ export default function UndetectableSection() {
       <div className="mx-auto w-full max-w-6xl">
         <h2
           id="undetectable-heading"
-          className="mx-auto w-fit bg-clip-text text-center font-medium text-transparent"
+          className="und-head mx-auto w-fit bg-clip-text text-center font-medium text-transparent"
           style={{
             fontSize: "clamp(2rem, 4.6vw, 3.5rem)",
             lineHeight: 1.1,
@@ -341,21 +451,21 @@ export default function UndetectableSection() {
           Undetectable in every way
         </h2>
 
-        <p className="mx-auto mt-3.5 max-w-xl text-center text-[15px] leading-6 text-[#6b7280] sm:text-base">
+        <p className="und-sub mx-auto mt-3.5 max-w-xl text-center text-[15px] leading-6 text-[#6b7280] sm:text-base">
           Suite of features to use {PRODUCT_NAME} without a trace.
         </p>
 
         <div className="mx-auto mt-14 grid max-w-[420px] gap-10 lg:max-w-none lg:grid-cols-3 lg:gap-7">
           {CARDS.map(({ lead, body, Visual }) => (
-            <article key={lead}>
+            <article key={lead} className="und-card">
               <div
                 aria-hidden="true"
-                className="relative h-[366px] overflow-hidden rounded-[32px] shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
+                className="und-tile relative h-[366px] overflow-hidden rounded-[32px] shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
                 style={{ background: TILE_BG }}
               >
                 <Visual />
               </div>
-              <p className="m-0 mt-6 text-[17px] leading-7 text-[#6b7280]">
+              <p className="und-text m-0 mt-6 text-[17px] leading-7 text-[#6b7280]">
                 <strong className="font-semibold text-[#151515]">{lead}</strong>{" "}
                 {body}
               </p>
