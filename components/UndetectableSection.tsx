@@ -33,7 +33,7 @@ const TILE_BG =
   "radial-gradient(90% 60% at 20% 0%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 70%), linear-gradient(180deg, #d5d9ef 0%, #c3c9e5 100%)";
 
 const PILL =
-  "rounded-lg bg-[#5d6272]/90 px-3 py-1.5 text-[12.5px] font-medium leading-4 text-white backdrop-blur-sm";
+  "whitespace-nowrap rounded-lg bg-[#5d6272]/90 px-2.5 py-1.5 text-[11px] font-medium leading-4 text-white backdrop-blur-sm sm:px-3 sm:text-[12.5px]";
 const CODE_CHIP =
   "rounded bg-[#e8edff] px-1 font-mono text-[10.5px] text-[#4f6bed]";
 
@@ -71,13 +71,13 @@ function Key({ children, wide = false }: { children: ReactNode; wide?: boolean }
 // Card 1: the participant list has no bot, and the widget is ghosted out.
 function ParticipantsVisual() {
   return (
-    <div className="flex h-full flex-col justify-between px-5 py-5">
-      <div className="rounded-[18px] bg-white px-4 py-3.5 shadow-[0_8px_24px_-12px_rgba(30,20,80,0.25)]">
-        <div className="flex items-center justify-between gap-2">
+    <div className="flex h-full flex-col justify-between px-4 py-4 sm:px-5 sm:py-5">
+      <div className="rounded-[18px] bg-white px-3.5 py-3 shadow-[0_8px_24px_-12px_rgba(30,20,80,0.25)] sm:px-4 sm:py-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
           <span className="whitespace-nowrap text-[15px] font-medium text-[#151515]">
             Meeting participants <span className="text-[#9ca3af]">(4)</span>
           </span>
-          <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-md bg-[#e6f4ec] px-2 py-1 text-[10.5px] font-medium text-[#1f2937]">
+          <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md bg-[#e6f4ec] px-2 py-1 text-[10.5px] font-medium text-[#1f2937]">
             <ShieldCheck size={12} className="text-[#22a559]" />
             No bots detected
           </span>
@@ -87,7 +87,7 @@ function ParticipantsVisual() {
           {PEOPLE.map((p) => (
             <li
               key={p.email}
-              className="und-row flex items-center gap-2.5 border-t border-[#eef0f6] py-2 first:border-t-0"
+              className="und-row flex items-center gap-2.5 border-t border-[#eef0f6] py-1.5 first:border-t-0 sm:py-2"
             >
               <span
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
@@ -207,10 +207,13 @@ function SplitVisual() {
             <Sparkles size={12} className="text-[#7c3aed]" />
             AI Response
           </div>
-          <p className="m-0 mt-1.5 whitespace-nowrap text-[11.5px] leading-[19px] text-[#374151]">
-            Add a check for missing <code className={CODE_CHIP}>userId</code> before
-            <br />
-            Also handle <code className={CODE_CHIP}>profile.name</code> safely to avoid
+          <p className="m-0 mt-1.5 text-[11.5px] leading-[19px] text-[#374151]">
+            <span className="block truncate">
+              Add a check for missing <code className={CODE_CHIP}>userId</code> before
+            </span>
+            <span className="block truncate">
+              Also handle <code className={CODE_CHIP}>profile.name</code> safely to avoid
+            </span>
           </p>
         </div>
       </div>
@@ -455,9 +458,9 @@ export default function UndetectableSection() {
           Suite of features to use {PRODUCT_NAME} without a trace.
         </p>
 
-        <div className="mx-auto mt-14 grid max-w-[420px] gap-10 lg:max-w-none lg:grid-cols-3 lg:gap-7">
+        <div className="mx-auto mt-14 grid max-w-[420px] grid-cols-1 gap-10 lg:max-w-none lg:grid-cols-3 lg:gap-7">
           {CARDS.map(({ lead, body, Visual }) => (
-            <article key={lead} className="und-card">
+            <article key={lead} className="und-card min-w-0">
               <div
                 aria-hidden="true"
                 className="und-tile relative h-[366px] overflow-hidden rounded-[32px] shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
