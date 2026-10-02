@@ -10,6 +10,10 @@ const undetectableFont = Lora({
   display: "swap",
 });
 
+// Setup file hosted on GitHub Releases. "Try for Free" starts this download.
+const DOWNLOAD_URL =
+  "https://github.com/raffay5529/wahai-website/releases/download/WahSetup/Wah.AI-Setup.exe";
+
 // Logo files are served from your /public folder.
 // If they are inside a subfolder, set it here, e.g. "/logos".
 const LOGO_DIR = "";
@@ -127,6 +131,9 @@ export default function HeroSection() {
           <button
             type="button"
             className="try-btn"
+            onClick={() => {
+              window.location.href = DOWNLOAD_URL;
+            }}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -155,29 +162,6 @@ export default function HeroSection() {
               <line x1="5" y1="12" x2="19" y2="12" />
               <polyline points="12 5 19 12 12 19" />
             </svg>
-          </button>
-
-          <button
-            type="button"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "14px 24px",
-              borderRadius: "12px",
-              border: "1px solid rgba(0,0,0,0.06)",
-              background: "#ffffff",
-              color: "#151515",
-              fontSize: "1rem",
-              fontWeight: 500,
-              cursor: "pointer",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="6 3 20 12 6 21 6 3" />
-            </svg>
-            Demo Video
           </button>
         </div>
       </div>
@@ -423,6 +407,29 @@ export default function HeroSection() {
 
         @media (prefers-reduced-motion: reduce) {
           .hero-box { animation: none; }
+        }
+
+        /* Mobile: bigger heading, text and button (desktop is unchanged) */
+        @media (max-width: 767px) {
+          .hero-title {
+            font-size: clamp(2.2rem, 11vw, 3rem) !important;
+          }
+          .hero-sub {
+            margin-top: 22px !important;
+            font-size: 1.1rem !important;
+          }
+          .hero-actions {
+            margin-top: 32px !important;
+          }
+          .try-btn {
+            padding: 18px 40px !important;
+            border-radius: 14px !important;
+            font-size: 1.125rem !important;
+          }
+          .try-btn .try-arrow {
+            width: 20px;
+            height: 20px;
+          }
         }
       `}</style>
     </>

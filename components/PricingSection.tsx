@@ -1,9 +1,21 @@
-import { Check } from "lucide-react";
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Check, Mail, MessageCircle, X } from "lucide-react";
 
 // Change the prices here. The yearly saving is worked out for you.
 const MONTHLY = 3;
 const YEARLY = 20;
 const SAVE = Math.round((1 - YEARLY / (MONTHLY * 12)) * 100); // 44
+
+// Change your contact details here. They show when someone clicks Subscribe.
+const EMAIL = "abdulrafay5526@gmail.com";
+const WHATSAPP = "+923185186302";
+
+// Setup file hosted on GitHub Releases. "Get started" (Free plan) starts this download.
+const DOWNLOAD_URL =
+  "https://github.com/raffay5529/wahai-website/releases/download/WahSetup/Wah.AI-Setup.exe";
 
 const CARD_BG = "linear-gradient(180deg, #f5f6fb 0%, #eff0f8 100%)";
 const CARD_SHADOW =
@@ -53,7 +65,130 @@ const PLANS = [
   },
 ];
 
+// The box that opens on Subscribe. Everything behind it is blurred.
+function ContactModal({ plan, onClose }) {
+  const dialogRef = useRef(null);
+
+  // Lock page scroll, close on Escape, and give focus back when it closes.
+  useEffect(() => {
+    const trigger = document.activeElement;
+    const prevOverflow = document.body.style.overflow;
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    dialogRef.current?.focus();
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKey);
+      trigger?.focus?.();
+    };
+  }, [onClose]);
+
+  // Pre-fills the plan name so you know what they want.
+  const subject = encodeURIComponent(`${plan.name} plan`);
+  const text = encodeURIComponent(
+    `Hi, I want to subscribe to the ${plan.name} plan (${plan.price} ${plan.unit}).`
+  );
+  const contacts = [
+    {
+      label: "Email",
+      value: EMAIL,
+      href: `mailto:${EMAIL}?subject=${subject}&body=${text}`,
+      Icon: Mail,
+    },
+    {
+      label: "WhatsApp",
+      value: WHATSAPP,
+      href: `https://wa.me/${WHATSAPP.replace(/\D/g, "")}?text=${text}`,
+      Icon: MessageCircle,
+      external: true,
+    },
+  ];
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      style={{
+        background: "rgba(24, 28, 56, 0.34)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="contact-title"
+        tabIndex={-1}
+        className="relative max-h-full w-full max-w-[420px] overflow-y-auto rounded-[28px] p-5 outline-none"
+        style={{ background: CARD_BG, boxShadow: CARD_SHADOW }}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-4 top-4 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[#6b7280] transition duration-300 hover:bg-[#e3e5ee] hover:text-[#151515] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a855f7]"
+        >
+          <X size={16} strokeWidth={1.75} aria-hidden="true" />
+        </button>
+
+        <h3
+          id="contact-title"
+          className="m-0 text-base font-medium leading-6 text-[#2a2b31]"
+        >
+          {plan.name} plan
+        </h3>
+
+        <p className="m-0 mt-7 flex items-baseline gap-1.5">
+          <span className="text-[44px] font-semibold leading-[52px] tracking-[-0.03em] text-black">
+            {plan.price}
+          </span>
+          <span className="text-base text-[#6b7280]">{plan.unit}</span>
+        </p>
+
+        <p className="m-0 mt-5 text-[15px] leading-6 text-[#6b7280]">
+          To subscribe, email us or message us on WhatsApp.
+        </p>
+
+        <div className="mt-5 flex flex-col gap-2.5 border-t border-[#e3e5ee] pt-5">
+          {contacts.map(({ label, value, href, Icon, external }) => (
+            <a
+              key={label}
+              href={href}
+              target={external ? "_blank" : undefined}
+              rel={external ? "noopener noreferrer" : undefined}
+              className="flex items-center gap-3 rounded-2xl bg-white/70 px-3.5 py-3 shadow-[inset_0_0_0_1px_#e3e5ee] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_24px_-12px_rgba(76,96,180,0.45),inset_0_0_0_1px_#e3e5ee] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a855f7] active:translate-y-0 active:scale-[0.98]"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#7c3aed]/10 text-[#7c3aed]">
+                <Icon size={16} strokeWidth={1.75} aria-hidden="true" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[13px] leading-5 text-[#6b7280]">
+                  {label}
+                </span>
+                <span className="block break-all text-[15px] font-medium leading-5 text-[#151515]">
+                  {value}
+                </span>
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export default function PricingSection() {
+  // The plan whose box is open (null = closed). Free never opens one.
+  const [selected, setSelected] = useState(null);
+  const closeBox = useCallback(() => setSelected(null), []);
+
   return (
     <section
       id="pricing"
@@ -101,6 +236,13 @@ export default function PricingSection() {
 
               <button
                 type="button"
+                onClick={
+                  p.unit
+                    ? () => setSelected(p)
+                    : () => {
+                        window.location.href = DOWNLOAD_URL;
+                      }
+                }
                 className="mt-6 h-11 w-full cursor-pointer rounded-[10px] text-[15px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_24px_-8px_rgba(20,20,40,0.55),inset_0_1px_0_rgba(255,255,255,0.14)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a855f7] active:translate-y-0 active:scale-[0.98]"
                 style={{ backgroundImage: BTN_BG }}
               >
@@ -138,6 +280,8 @@ export default function PricingSection() {
           ))}
         </div>
       </div>
+
+      {selected && <ContactModal plan={selected} onClose={closeBox} />}
     </section>
   );
 }

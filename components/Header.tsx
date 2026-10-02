@@ -35,7 +35,10 @@ const NAV_LINKS = [
 
 
 const SIGN_IN_HREF = "/sign-in";
-const CTA_HREF = "/sign-up";
+
+// Setup file hosted on GitHub Releases. "Try for Free" starts this download.
+const DOWNLOAD_URL =
+  "https://github.com/raffay5529/wahai-website/releases/download/WahSetup/Wah.AI-Setup.exe";
 
 // Hide on scroll: while scrolling down, the header blurs and slides out of view
 // as soon as this element (the demo section in VideoSection) reaches the bottom
@@ -290,9 +293,9 @@ export default function Header() {
           {/* Actions */}
           <div className="col-start-3 flex items-center gap-2 justify-self-end">
            
-            <Link href={CTA_HREF} className={`${buttonDark} inline-flex px-4`}>
+            <a href={DOWNLOAD_URL} className={`${buttonDark} inline-flex px-4`}>
               Try for Free
-            </Link>
+            </a>
 
             <button
               ref={menuButtonRef}

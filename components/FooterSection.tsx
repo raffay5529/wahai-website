@@ -1,9 +1,15 @@
+"use client";
+
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import type { ReactNode } from "react";
 
 const YEAR = new Date().getFullYear();
 const RING_MASK = "linear-gradient(to bottom, #000 45%, transparent 100%)";
+
+// Setup file hosted on GitHub Releases. "Try for Free" starts this download.
+const DOWNLOAD_URL =
+  "https://github.com/raffay5529/wahai-website/releases/download/WahSetup/Wah.AI-Setup.exe";
 
 // Links are placeholders ("#") except Pricing. Point them at your real pages.
 const LINK_ROWS = [
@@ -126,6 +132,9 @@ export default function FooterSection() {
 
           <button
             type="button"
+            onClick={() => {
+              window.location.href = DOWNLOAD_URL;
+            }}
             className="mt-8 inline-flex h-12 cursor-pointer items-center gap-2 rounded-xl border border-[#c4a0ff]/40 px-6 text-[15px] font-semibold text-white shadow-[0_0_28px_rgba(139,92,246,0.45)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_34px_rgba(168,85,247,0.6)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a855f7] active:translate-y-0 active:scale-[0.98]"
             style={{ backgroundImage: "linear-gradient(180deg, #9b6bff 0%, #7c3aed 100%)" }}
           >
